@@ -8,9 +8,10 @@ const app = express();
 
 dotenv.config();
 const PORT = process.env.PORT;
+const DbName = "BharatIntern";
 
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(`${process.env.MONGODB_URI}/${DbName}`)
   .then(() => {
     console.log("mongoose connected");
     app.listen(PORT, () => {
@@ -26,14 +27,17 @@ app.use(bodyParser.json());
 
 app.use(express.static("public"));
 
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
+});
+
 app.post("/register", async (req, res) => {
   try {
     const { firstname, lastname, email, password } = req.body;
-    console.log(firstname + lastname + email + password);
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.redirect("userExist");
     }
 
     const newUser = new User({
@@ -45,9 +49,19 @@ app.post("/register", async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.redirect("success");
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.redirect("failed");
   }
+});
+
+app.get("/success", (req, res) => {
+  res.sendFile(__dirname + "/public/pages/success.html");
+});
+app.get("/failed", (req, res) => {
+  res.sendFile(__dirname + "/public/pages/failed.html");
+});
+app.get("/userExist", (req, res) => {
+  res.sendFile(__dirname + "/public/pages/userExist.html");
 });
